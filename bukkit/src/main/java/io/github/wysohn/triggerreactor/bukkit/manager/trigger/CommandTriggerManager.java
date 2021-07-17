@@ -21,6 +21,7 @@ import io.github.wysohn.triggerreactor.core.main.TriggerReactorCore;
 import io.github.wysohn.triggerreactor.core.manager.trigger.command.AbstractCommandTriggerManager;
 import io.github.wysohn.triggerreactor.core.manager.trigger.command.CommandTrigger;
 import io.github.wysohn.triggerreactor.core.manager.trigger.command.ITabCompleter;
+import io.github.wysohn.triggerreactor.core.manager.trigger.command.ITabCompleter.TabCompleterBuilder;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
@@ -58,7 +59,7 @@ public class CommandTriggerManager extends AbstractCommandTriggerManager impleme
             ITabCompleter tabCompleter = Optional.ofNullable(trigger.getTabCompleters())
                     .filter(iTabCompleters -> iTabCompleters.length >= args.length)
                     .map(iTabCompleters -> iTabCompleters[args.length - 1])
-                    .orElse(ITabCompleter.EMPTY);
+                    .orElse(TabCompleterBuilder.self().build());
 
             String partial = args[args.length - 1];
             if (partial.length() < 1) { // show hint if nothing is entered yet

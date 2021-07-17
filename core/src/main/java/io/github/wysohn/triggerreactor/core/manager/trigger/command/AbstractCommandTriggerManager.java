@@ -21,6 +21,8 @@ import io.github.wysohn.triggerreactor.core.config.InvalidTrgConfigurationExcept
 import io.github.wysohn.triggerreactor.core.config.source.IConfigSource;
 import io.github.wysohn.triggerreactor.core.main.TriggerReactorCore;
 import io.github.wysohn.triggerreactor.core.manager.trigger.AbstractTriggerManager;
+import io.github.wysohn.triggerreactor.core.manager.trigger.command.ITabCompleter.TabCompleterBuilder;
+import io.github.wysohn.triggerreactor.core.manager.trigger.command.ITabCompleter.Template;
 import io.github.wysohn.triggerreactor.core.manager.trigger.ITriggerLoader;
 import io.github.wysohn.triggerreactor.core.manager.trigger.Trigger;
 import io.github.wysohn.triggerreactor.core.manager.trigger.TriggerInfo;
@@ -30,6 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+
 
 public abstract class AbstractCommandTriggerManager extends AbstractTriggerManager<CommandTrigger> {
     private static final String SYNC = "sync";
@@ -45,7 +49,7 @@ public abstract class AbstractCommandTriggerManager extends AbstractTriggerManag
             private final Map<String, ITabCompleter> tabCompleterMap = new HashMap<>();
 
             {
-                tabCompleterMap.put("$playerlist", ITabCompleter.PLAYER);
+                tabCompleterMap.put("$playerlist", TabCompleterBuilder.of(Template.PLAYER).build());
             }
 
             private ITabCompleter toTabCompleter(Map<String, Object> tabs) {
@@ -54,32 +58,19 @@ public abstract class AbstractCommandTriggerManager extends AbstractTriggerManag
 
                 ITabCompleter tabCompleter;
                 if (candidates_str != null && candidates_str.startsWith("$")) {
-                    tabCompleter = tabCompleterMap.getOrDefault(candidates_str, ITabCompleter.EMPTY);
+                    tabCompleter = tabCompleterMap.getOrDefault(candidates_str, TabCompleterBuilder.self().build());
                 } else if (candidates_str == null && hint != null) {
-                    tabCompleter = ITabCompleter.hint(hint);
+                    tabCompleter = TabCompleterBuilder.withHint(hint).build();
                 } else if (candidates_str != null && hint == null) {
-                    tabCompleter = ITabCompleter.simple(candidates_str);
+                    tabCompleter = TabCompleterBuilder.of(candidates_str).build();
                 } else {
-                    tabCompleter = new ITabCompleter() {
-                        @Override
-                        public List<String> getCandidates(String part) {
-                            return Optional.ofNullable(candidates_str)
-                                    .map(str -> str.split(","))
-                                    .map(ITabCompleter::list)
-                                    .map(list -> list.stream()
-                                            .filter(candidate -> candidate.startsWith(part))
-                                            .collect(Collectors.toList()))
-                                    .orElseGet(() -> ITabCompleter.list(""));
-
-                        }
-
-                        @Override
-                        public List<String> getHint() {
-                            return Optional.ofNullable(hint)
-                                    .map(ITabCompleter::list)
-                                    .orElseGet(() -> ITabCompleter.list(""));
-                        }
-                    };
+                    tabCompleter = TabCompleterBuilder.withHint(hint)
+                            .setCandidate(
+                                    Optional.ofNullable(candidates_str)
+                                                .map(str -> ITabCompleter.list(str.split(",")))
+                                                .orElseGet(() -> ITabCompleter.list(""))
+                            )
+                            .build();
                 }
                 return tabCompleter;
             }
